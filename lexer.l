@@ -2,12 +2,14 @@
 #include "parser.tab.h"
 #include <stdlib.h>
 #include <string.h>
+
+int yylineno=0;
 %}
 
-digit       [0-9]
-letter      [a-zA-Z]
-id          {letter}({letter}|{digit})*
-num         {digit}+(\.{digit}+)?
+DIGIT       [0-9]
+LETTER      [a-zA-Z]
+ID          {LETTER}({LETTER}|{DIGIT})*
+NUM         {DIGIT}+(\.{DIGIT}+)?
 
 %%
 
@@ -41,8 +43,8 @@ num         {digit}+(\.{digit}+)?
 "{"             { return LBRACE; }
 "}"             { return RBRACE; }
 
-{id}            { yylval.str = strdup(yytext); return ID; }
-{num}           { yylval.num = atof(yytext); return NUM; }
+{ID}            { yylval.str = strdup(yytext); return ID; }
+{NUM}           { yylval.num = atof(yytext); return NUM; }
 
 [ \t\r\n]+      { /* ignore whitespace */ }
 
