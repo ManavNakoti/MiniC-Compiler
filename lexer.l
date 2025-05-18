@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-int yylineno=0;
+
+
 %}
 
 DIGIT       [0-9]

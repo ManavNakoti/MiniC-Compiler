@@ -71,12 +71,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "symtab.h"    // Symbol table header
 
 extern int yylex();
 extern int yylineno;
 void yyerror(const char *s);
 
-#line 80 "parser.tab.c"
+#line 82 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -536,12 +538,12 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    33,    33,    34,    38,    39,    40,    41,    42,    43,
-      47,    51,    52,    56,    60,    61,    62,    63,    67,    71,
-      72,    73,    77,    78,    79,    83,    84,    86,    87,    91,
-      92
+       0,    40,    40,    41,    45,    46,    47,    48,    49,    50,
+      54,    58,    59,    63,    69,    70,    71,    72,    76,    91,
+      98,   105,   111,   118,   125,   131,   134,   145,   146,   150,
+     151
 };
 #endif
 
@@ -1141,19 +1143,141 @@ yyreduce:
   switch (yyn)
     {
   case 13: /* declaration: type ID  */
-#line 56 "parser.y"
-                              { printf("Declaration: %s\n", (yyvsp[0].str)); }
-#line 1147 "parser.tab.c"
+#line 63 "parser.y"
+              {
+          insert_symbol((yyvsp[0].str), (yyvsp[-1].type));
+      }
+#line 1151 "parser.tab.c"
+    break;
+
+  case 14: /* type: INT  */
+#line 69 "parser.y"
+          { (yyval.type) = TYPE_INT; }
+#line 1157 "parser.tab.c"
+    break;
+
+  case 15: /* type: FLOAT  */
+#line 70 "parser.y"
+            { (yyval.type) = TYPE_FLOAT; }
+#line 1163 "parser.tab.c"
+    break;
+
+  case 16: /* type: CHAR  */
+#line 71 "parser.y"
+           { (yyval.type) = TYPE_CHAR; }
+#line 1169 "parser.tab.c"
+    break;
+
+  case 17: /* type: VOID  */
+#line 72 "parser.y"
+           { (yyval.type) = TYPE_VOID; }
+#line 1175 "parser.tab.c"
     break;
 
   case 18: /* assignment: ID ASSIGN expression  */
-#line 67 "parser.y"
-                              { printf("Assignment to %s\n", (yyvsp[-2].str)); }
-#line 1153 "parser.tab.c"
+#line 76 "parser.y"
+                           {
+          Symbol *sym = lookup_symbol((yyvsp[-2].str));
+          if (!sym) {
+              fprintf(stderr, "Error: undeclared variable %s at line %d\n", (yyvsp[-2].str), yylineno);
+              exit(1);
+          }
+          if (sym->type != (yyvsp[0].type)) {
+              fprintf(stderr, "Type error: cannot assign type %d to variable %s of type %d at line %d\n",
+                      (yyvsp[0].type), (yyvsp[-2].str), sym->type, yylineno);
+              exit(1);
+          }
+      }
+#line 1192 "parser.tab.c"
+    break;
+
+  case 19: /* expression: expression PLUS term  */
+#line 91 "parser.y"
+                           {
+          if ((yyvsp[-2].type) != (yyvsp[0].type)) {
+              fprintf(stderr, "Type error in addition at line %d\n", yylineno);
+              exit(1);
+          }
+          (yyval.type) = (yyvsp[-2].type);
+      }
+#line 1204 "parser.tab.c"
+    break;
+
+  case 20: /* expression: expression MINUS term  */
+#line 98 "parser.y"
+                            {
+          if ((yyvsp[-2].type) != (yyvsp[0].type)) {
+              fprintf(stderr, "Type error in subtraction at line %d\n", yylineno);
+              exit(1);
+          }
+          (yyval.type) = (yyvsp[-2].type);
+      }
+#line 1216 "parser.tab.c"
+    break;
+
+  case 21: /* expression: term  */
+#line 105 "parser.y"
+           {
+          (yyval.type) = (yyvsp[0].type);
+      }
+#line 1224 "parser.tab.c"
+    break;
+
+  case 22: /* term: term MUL factor  */
+#line 111 "parser.y"
+                      {
+          if ((yyvsp[-2].type) != (yyvsp[0].type)) {
+              fprintf(stderr, "Type error in multiplication at line %d\n", yylineno);
+              exit(1);
+          }
+          (yyval.type) = (yyvsp[-2].type);
+      }
+#line 1236 "parser.tab.c"
+    break;
+
+  case 23: /* term: term DIV factor  */
+#line 118 "parser.y"
+                      {
+          if ((yyvsp[-2].type) != (yyvsp[0].type)) {
+              fprintf(stderr, "Type error in division at line %d\n", yylineno);
+              exit(1);
+          }
+          (yyval.type) = (yyvsp[-2].type);
+      }
+#line 1248 "parser.tab.c"
+    break;
+
+  case 24: /* term: factor  */
+#line 125 "parser.y"
+             {
+          (yyval.type) = (yyvsp[0].type);
+      }
+#line 1256 "parser.tab.c"
+    break;
+
+  case 25: /* factor: NUM  */
+#line 131 "parser.y"
+          {
+          (yyval.type) = TYPE_FLOAT;  // Treat numeric literals as float
+      }
+#line 1264 "parser.tab.c"
+    break;
+
+  case 26: /* factor: ID  */
+#line 134 "parser.y"
+         {
+          Symbol *sym = lookup_symbol((yyvsp[0].str));
+          if (!sym) {
+              fprintf(stderr, "Error: undeclared variable %s at line %d\n", (yyvsp[0].str), yylineno);
+              exit(1);
+          }
+          (yyval.type) = sym->type;
+      }
+#line 1277 "parser.tab.c"
     break;
 
 
-#line 1157 "parser.tab.c"
+#line 1281 "parser.tab.c"
 
       default: break;
     }
@@ -1346,7 +1470,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 95 "parser.y"
+#line 154 "parser.y"
 
 
 void yyerror(const char *s) {
