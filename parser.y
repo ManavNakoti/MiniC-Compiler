@@ -1,5 +1,6 @@
 %{
 #include "symbol_table.h"
+#include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,7 @@ void yyerror(const char *s);
     char* str;
     float num;
     DataType dtype;
+    struct ASTNode* ast;
 }
 
 /* Token declarations */
@@ -29,8 +31,11 @@ void yyerror(const char *s);
 
 %type <dtype> type  // This declares that the non-terminal 'type' will have a value
                     // of type DataType (accessed via the 'dtype' field of the union)
-%type <dtype> expression
-%type <dtype> factor
+//%type <dtype> expression
+//%type <dtype> factor
+%type <ast> program statement statement_list compound_statement declaration assignment expression factor if_statement loop_statement
+
+
 
 /* Operator Precedence and Associativity */
 // Lower an operator is in this list, the lower its precedence
@@ -49,8 +54,8 @@ void yyerror(const char *s);
 %%
 
 program:
-      program statement
-    | /* empty */
+      program statement    { $$ = make_ast_node(AST_STATEMENT_LIST, $1, $2, NULL); }
+    | /* empty */          { $$ = NULL; }
     ;
 
 statement:
@@ -67,8 +72,8 @@ compound_statement:
     ;
 
 statement_list:
-      statement_list statement
-    | /* empty */
+      statement_list statement { $$ = make_ast_node(AST_STATEMENT_LIST, $1, $2, NULL); }
+    | /* empty */              { $$ = NULL; }
     ;
 
 declaration:
@@ -102,53 +107,68 @@ assignment:
             sprintf(error_msg, "Semantic error: Identifier '%s' not declared for assignment.", $1);
             yyerror(error_msg);
         }
+        $$ = make_ast_node(AST_ASSIGN, make_leaf_node($1), $3, NULL);
     }
     ;
 
 expression:
-    expression PLUS expression      { /* Action if needed, e.g., for AST: $$ = new_ast_node('+', $1, $3); */ }
-  | expression MINUS expression     { /* Action if needed */ }
-  | expression MUL expression       { /* Action if needed */ }
-  | expression DIV expression       { /* Action if needed */ }
-  | expression MOD expression       { /* Action if needed */ }
-  | expression GT expression        { /* Action if needed, e.g., for type checking or AST */ }
-  | expression LT expression        { /* Action if needed */ }
-  | expression GE expression        { /* Action if needed */ }
-  | expression LE expression        { /* Action if needed */ }
-  | expression EQ expression        { /* Action if needed */ }
-  | expression NEQ expression       { /* Action if needed */ }
-  | LPAREN expression RPAREN        { $$ = $2; /* Value of parenthesized expr is the inner expr's value */ }
-  | factor                          { /* Value of expression can be a factor directly */ }
-  ;
+      expression PLUS expression      { $$ = make_ast_node(AST_ADD, $1, $3, NULL); }
+    | expression MINUS expression     { $$ = make_ast_node(AST_SUB, $1, $3, NULL); }
+    | expression MUL expression       { $$ = make_ast_node(AST_MUL, $1, $3, NULL); }
+    | expression DIV expression       { $$ = make_ast_node(AST_DIV, $1, $3, NULL); }
+    | expression MOD expression       { $$ = make_ast_node(AST_MOD, $1, $3, NULL); }
+    | expression GT expression        { $$ = make_ast_node(AST_GT, $1, $3, NULL); }
+    | expression LT expression        { $$ = make_ast_node(AST_LT, $1, $3, NULL); }
+    | expression GE expression        { $$ = make_ast_node(AST_GE, $1, $3, NULL); }
+    | expression LE expression        { $$ = make_ast_node(AST_LE, $1, $3, NULL); }
+    | expression EQ expression        { $$ = make_ast_node(AST_EQ, $1, $3, NULL); }
+    | expression NEQ expression       { $$ = make_ast_node(AST_NEQ, $1, $3, NULL); }
+    | LPAREN expression RPAREN        { $$ = $2; }
+    | factor                          { $$ = $1; }
+    ;
+
 
 factor:
-    NUM {
-        // Assuming NUM from your lexer is always treated as float for now
-        // and its yylval field is 'num'.
-        // We'll assign its type as TYPE_FLOAT.
-        $$ = TYPE_FLOAT;
-    }
-  | ID {
-        SymbolEntry* entry = symbol_table_lookup($1); // $1 is char* (name of ID)
-        if (entry == NULL) {
+      NUM {
+          $$ = make_num_node($1);  // Assuming you have a function to create numeric AST node
+      }
+    | ID {
+        SymbolEntry* entry = symbol_table_lookup($1);
+        if (!entry) {
             char error_msg[256];
             sprintf(error_msg, "Semantic error: Identifier '%s' not declared.", $1);
             yyerror(error_msg);
-            $$ = TYPE_UNDEFINED; // Assign a default/error type
+            $$ = NULL;
         } else {
-            $$ = entry->type;    // The "value" of the ID factor is its DataType
+            $$ = make_leaf_node($1);  // Create an AST leaf node for variable
         }
     }
-  ;
+    ;
+
 if_statement:
       IF LPAREN expression RPAREN statement %prec LOWER_THAN_ELSE
+        {
+            $$ = make_ast_node(AST_IF, $3, $5, NULL);
+        }
     | IF LPAREN expression RPAREN statement ELSE statement
+        {
+            $$ = make_ast_node(AST_IF_ELSE, $3, $5, $7);
+        }
     ;
+
 
 loop_statement:
       WHILE LPAREN expression RPAREN statement
+        {
+            $$ = make_ast_node(AST_WHILE, $3, $5, NULL);
+        }
     | FOR LPAREN assignment SEMICOLON expression SEMICOLON assignment RPAREN statement
+        {
+            ASTNode* for_header = make_ast_node(AST_FOR_HEADER, $3, $5, $7);
+            $$ = make_ast_node(AST_FOR, for_header, $9, NULL);
+        }
     ;
+
 
 %%
 
@@ -166,5 +186,9 @@ int main() {
         printf("Parsing failed with %d error(s).\n", result); // result from yyparse isn't error count
     }                                                        // Number of yyerror calls is more indicative
     symbol_table_print(); // Print table at the end for debugging
+    if (result == 0) {
+    printf("Parsing completed successfully!\n");
+    print_ast($$);  // Assuming you have a function like this
+}
     return result; // Or return 0 if yyparse was successful, 1 otherwise
 }

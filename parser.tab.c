@@ -70,6 +70,7 @@
 #line 1 "parser.y"
 
 #include "symbol_table.h"
+#include "ast.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -78,7 +79,7 @@ extern int yylex(void);
 extern int yylineno;
 void yyerror(const char *s);
 
-#line 82 "parser.tab.c"
+#line 83 "parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -540,10 +541,10 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    52,    52,    53,    57,    58,    59,    60,    61,    62,
-      66,    66,    70,    71,    76,    90,    91,    92,    93,    97,
-     109,   110,   111,   112,   113,   114,   115,   116,   117,   118,
-     119,   120,   121,   125,   131,   144,   145,   149,   150
+       0,    57,    57,    58,    62,    63,    64,    65,    66,    67,
+      71,    71,    75,    76,    81,    95,    96,    97,    98,   102,
+     115,   116,   117,   118,   119,   120,   121,   122,   123,   124,
+     125,   126,   127,   132,   135,   149,   153,   161,   165
 };
 #endif
 
@@ -1171,20 +1172,44 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
+  case 2: /* program: program statement  */
+#line 57 "parser.y"
+                           { (yyval.ast) = make_ast_node(AST_STATEMENT_LIST, (yyvsp[-1].ast), (yyvsp[0].ast), NULL); }
+#line 1179 "parser.tab.c"
+    break;
+
+  case 3: /* program: %empty  */
+#line 58 "parser.y"
+                           { (yyval.ast) = NULL; }
+#line 1185 "parser.tab.c"
+    break;
+
   case 10: /* $@1: %empty  */
-#line 66 "parser.y"
+#line 71 "parser.y"
            { symbol_table_open_scope(); }
-#line 1178 "parser.tab.c"
+#line 1191 "parser.tab.c"
     break;
 
   case 11: /* compound_statement: LBRACE $@1 statement_list RBRACE  */
-#line 66 "parser.y"
+#line 71 "parser.y"
                                                                 { symbol_table_close_scope(); }
-#line 1184 "parser.tab.c"
+#line 1197 "parser.tab.c"
+    break;
+
+  case 12: /* statement_list: statement_list statement  */
+#line 75 "parser.y"
+                               { (yyval.ast) = make_ast_node(AST_STATEMENT_LIST, (yyvsp[-1].ast), (yyvsp[0].ast), NULL); }
+#line 1203 "parser.tab.c"
+    break;
+
+  case 13: /* statement_list: %empty  */
+#line 76 "parser.y"
+                               { (yyval.ast) = NULL; }
+#line 1209 "parser.tab.c"
     break;
 
   case 14: /* declaration: type ID  */
-#line 76 "parser.y"
+#line 81 "parser.y"
             {
         // printf("Declaration: Type '%s', Name: '%s'\n", datatype_to_string($1), $2);
         SymbolEntry *entry = symbol_table_insert((yyvsp[0].str), (yyvsp[-1].dtype)); // $1 is DataType from 'type'
@@ -1196,35 +1221,35 @@ yyreduce:
         // No need to free $2 here if symbol_table_insert makes its own copy (which it does via strdup)
         // and assuming yylval management by Bison handles the original yylval.str if not used elsewhere.
     }
-#line 1200 "parser.tab.c"
+#line 1225 "parser.tab.c"
     break;
 
   case 15: /* type: INT  */
-#line 90 "parser.y"
+#line 95 "parser.y"
             { (yyval.dtype) = TYPE_INT; }
-#line 1206 "parser.tab.c"
+#line 1231 "parser.tab.c"
     break;
 
   case 16: /* type: FLOAT  */
-#line 91 "parser.y"
+#line 96 "parser.y"
             { (yyval.dtype) = TYPE_FLOAT; }
-#line 1212 "parser.tab.c"
+#line 1237 "parser.tab.c"
     break;
 
   case 17: /* type: CHAR  */
-#line 92 "parser.y"
+#line 97 "parser.y"
             { (yyval.dtype) = TYPE_CHAR; }
-#line 1218 "parser.tab.c"
+#line 1243 "parser.tab.c"
     break;
 
   case 18: /* type: VOID  */
-#line 93 "parser.y"
+#line 98 "parser.y"
             { (yyval.dtype) = TYPE_VOID; }
-#line 1224 "parser.tab.c"
+#line 1249 "parser.tab.c"
     break;
 
   case 19: /* assignment: ID ASSIGN expression  */
-#line 97 "parser.y"
+#line 102 "parser.y"
                          {
         // printf("Assignment to %s\n", $1);
         SymbolEntry* entry = symbol_table_lookup((yyvsp[-2].str));
@@ -1233,117 +1258,148 @@ yyreduce:
             sprintf(error_msg, "Semantic error: Identifier '%s' not declared for assignment.", (yyvsp[-2].str));
             yyerror(error_msg);
         }
+        (yyval.ast) = make_ast_node(AST_ASSIGN, make_leaf_node((yyvsp[-2].str)), (yyvsp[0].ast), NULL);
     }
-#line 1238 "parser.tab.c"
+#line 1264 "parser.tab.c"
     break;
 
   case 20: /* expression: expression PLUS expression  */
-#line 109 "parser.y"
-                                    { /* Action if needed, e.g., for AST: $$ = new_ast_node('+', $1, $3); */ }
-#line 1244 "parser.tab.c"
+#line 115 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_ADD, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1270 "parser.tab.c"
     break;
 
   case 21: /* expression: expression MINUS expression  */
-#line 110 "parser.y"
-                                    { /* Action if needed */ }
-#line 1250 "parser.tab.c"
+#line 116 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_SUB, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1276 "parser.tab.c"
     break;
 
   case 22: /* expression: expression MUL expression  */
-#line 111 "parser.y"
-                                    { /* Action if needed */ }
-#line 1256 "parser.tab.c"
+#line 117 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_MUL, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1282 "parser.tab.c"
     break;
 
   case 23: /* expression: expression DIV expression  */
-#line 112 "parser.y"
-                                    { /* Action if needed */ }
-#line 1262 "parser.tab.c"
+#line 118 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_DIV, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1288 "parser.tab.c"
     break;
 
   case 24: /* expression: expression MOD expression  */
-#line 113 "parser.y"
-                                    { /* Action if needed */ }
-#line 1268 "parser.tab.c"
+#line 119 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_MOD, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1294 "parser.tab.c"
     break;
 
   case 25: /* expression: expression GT expression  */
-#line 114 "parser.y"
-                                    { /* Action if needed, e.g., for type checking or AST */ }
-#line 1274 "parser.tab.c"
+#line 120 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_GT, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1300 "parser.tab.c"
     break;
 
   case 26: /* expression: expression LT expression  */
-#line 115 "parser.y"
-                                    { /* Action if needed */ }
-#line 1280 "parser.tab.c"
+#line 121 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_LT, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1306 "parser.tab.c"
     break;
 
   case 27: /* expression: expression GE expression  */
-#line 116 "parser.y"
-                                    { /* Action if needed */ }
-#line 1286 "parser.tab.c"
+#line 122 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_GE, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1312 "parser.tab.c"
     break;
 
   case 28: /* expression: expression LE expression  */
-#line 117 "parser.y"
-                                    { /* Action if needed */ }
-#line 1292 "parser.tab.c"
+#line 123 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_LE, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1318 "parser.tab.c"
     break;
 
   case 29: /* expression: expression EQ expression  */
-#line 118 "parser.y"
-                                    { /* Action if needed */ }
-#line 1298 "parser.tab.c"
+#line 124 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_EQ, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1324 "parser.tab.c"
     break;
 
   case 30: /* expression: expression NEQ expression  */
-#line 119 "parser.y"
-                                    { /* Action if needed */ }
-#line 1304 "parser.tab.c"
+#line 125 "parser.y"
+                                      { (yyval.ast) = make_ast_node(AST_NEQ, (yyvsp[-2].ast), (yyvsp[0].ast), NULL); }
+#line 1330 "parser.tab.c"
     break;
 
   case 31: /* expression: LPAREN expression RPAREN  */
-#line 120 "parser.y"
-                                    { (yyval.dtype) = (yyvsp[-1].dtype); /* Value of parenthesized expr is the inner expr's value */ }
-#line 1310 "parser.tab.c"
+#line 126 "parser.y"
+                                      { (yyval.ast) = (yyvsp[-1].ast); }
+#line 1336 "parser.tab.c"
     break;
 
   case 32: /* expression: factor  */
-#line 121 "parser.y"
-                                    { /* Value of expression can be a factor directly */ }
-#line 1316 "parser.tab.c"
+#line 127 "parser.y"
+                                      { (yyval.ast) = (yyvsp[0].ast); }
+#line 1342 "parser.tab.c"
     break;
 
   case 33: /* factor: NUM  */
-#line 125 "parser.y"
-        {
-        // Assuming NUM from your lexer is always treated as float for now
-        // and its yylval field is 'num'.
-        // We'll assign its type as TYPE_FLOAT.
-        (yyval.dtype) = TYPE_FLOAT;
-    }
-#line 1327 "parser.tab.c"
+#line 132 "parser.y"
+          {
+          (yyval.ast) = make_num_node((yyvsp[0].num));  // Assuming you have a function to create numeric AST node
+      }
+#line 1350 "parser.tab.c"
     break;
 
   case 34: /* factor: ID  */
-#line 131 "parser.y"
-       {
-        SymbolEntry* entry = symbol_table_lookup((yyvsp[0].str)); // $1 is char* (name of ID)
-        if (entry == NULL) {
+#line 135 "parser.y"
+         {
+        SymbolEntry* entry = symbol_table_lookup((yyvsp[0].str));
+        if (!entry) {
             char error_msg[256];
             sprintf(error_msg, "Semantic error: Identifier '%s' not declared.", (yyvsp[0].str));
             yyerror(error_msg);
-            (yyval.dtype) = TYPE_UNDEFINED; // Assign a default/error type
+            (yyval.ast) = NULL;
         } else {
-            (yyval.dtype) = entry->type;    // The "value" of the ID factor is its DataType
+            (yyval.ast) = make_leaf_node((yyvsp[0].str));  // Create an AST leaf node for variable
         }
     }
-#line 1343 "parser.tab.c"
+#line 1366 "parser.tab.c"
+    break;
+
+  case 35: /* if_statement: IF LPAREN expression RPAREN statement  */
+#line 150 "parser.y"
+        {
+            (yyval.ast) = make_ast_node(AST_IF, (yyvsp[-2].ast), (yyvsp[0].ast), NULL);
+        }
+#line 1374 "parser.tab.c"
+    break;
+
+  case 36: /* if_statement: IF LPAREN expression RPAREN statement ELSE statement  */
+#line 154 "parser.y"
+        {
+            (yyval.ast) = make_ast_node(AST_IF_ELSE, (yyvsp[-4].ast), (yyvsp[-2].ast), (yyvsp[0].ast));
+        }
+#line 1382 "parser.tab.c"
+    break;
+
+  case 37: /* loop_statement: WHILE LPAREN expression RPAREN statement  */
+#line 162 "parser.y"
+        {
+            (yyval.ast) = make_ast_node(AST_WHILE, (yyvsp[-2].ast), (yyvsp[0].ast), NULL);
+        }
+#line 1390 "parser.tab.c"
+    break;
+
+  case 38: /* loop_statement: FOR LPAREN assignment SEMICOLON expression SEMICOLON assignment RPAREN statement  */
+#line 166 "parser.y"
+        {
+            ASTNode* for_header = make_ast_node(AST_FOR_HEADER, (yyvsp[-6].ast), (yyvsp[-4].ast), (yyvsp[-2].ast));
+            (yyval.ast) = make_ast_node(AST_FOR, for_header, (yyvsp[0].ast), NULL);
+        }
+#line 1399 "parser.tab.c"
     break;
 
 
-#line 1347 "parser.tab.c"
+#line 1403 "parser.tab.c"
 
       default: break;
     }
@@ -1536,7 +1592,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 153 "parser.y"
+#line 173 "parser.y"
 
 
 void yyerror(const char *s) {
@@ -1553,5 +1609,9 @@ int main() {
         printf("Parsing failed with %d error(s).\n", result); // result from yyparse isn't error count
     }                                                        // Number of yyerror calls is more indicative
     symbol_table_print(); // Print table at the end for debugging
+    if (result == 0) {
+    printf("Parsing completed successfully!\n");
+    print_ast($$);  // Assuming you have a function like this
+}
     return result; // Or return 0 if yyparse was successful, 1 otherwise
 }
