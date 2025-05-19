@@ -96,7 +96,7 @@ union YYSTYPE
 
     char* str;
     float num;
-    int type;       // For storing types like INT, FLOAT, etc.
+    DataType dtype;
 
 #line 102 "parser.tab.h"
 

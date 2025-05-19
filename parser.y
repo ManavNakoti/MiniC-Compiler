@@ -3,11 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-<<<<<<< HEAD
-#include "symtab.h"    // Symbol table header
-=======
->>>>>>> snisa_symbol_table
-
 
 extern int yylex(void);
 extern int yylineno;
@@ -17,11 +12,7 @@ void yyerror(const char *s);
 %union {
     char* str;
     float num;
-<<<<<<< HEAD
-    int type;       // For storing types like INT, FLOAT, etc.
-=======
     DataType dtype;
->>>>>>> snisa_symbol_table
 }
 
 /* Token declarations */
@@ -36,12 +27,6 @@ void yyerror(const char *s);
 
 %token SEMICOLON COMMA LPAREN RPAREN LBRACE RBRACE
 
-<<<<<<< HEAD
-/* Specify types for nonterminals */
-%type <type> type expression term factor
-
-/* Precedence */
-=======
 %type <dtype> type  // This declares that the non-terminal 'type' will have a value
                     // of type DataType (accessed via the 'dtype' field of the union)
 %type <dtype> expression
@@ -58,7 +43,6 @@ void yyerror(const char *s);
 %left MUL DIV MOD         // Multiplicative operators
 // You can add unary operators here later if needed (e.g., %right UMINUS NOT)
 
->>>>>>> snisa_symbol_table
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
 
