@@ -1,0 +1,13 @@
+# Generated files from Flex and Bison
+lex.yy.c
+parser.tab.c
+parser.tab.h
+
+# Object files
+*.o
+
+# Executable
+minic
+
+# VS Code specific (optional, but common)
+.vscode/
